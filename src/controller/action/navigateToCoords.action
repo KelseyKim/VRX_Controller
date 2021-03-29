@@ -1,0 +1,9 @@
+# Goal
+sensor_msgs/NavSatFix goalCoords
+---
+# Result
+sensor_msgs/NavSatFix finalCoords
+---
+# Feedback
+std_msgs/Float64 distanceToGoal
+sensor_msgs/NavSatFix currentCoords

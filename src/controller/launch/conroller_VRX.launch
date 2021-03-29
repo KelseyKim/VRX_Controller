@@ -1,0 +1,74 @@
+<launch>
+    # Launch robot_localization
+
+
+    # Launch node to publish yaw angle between map frame and vessel parallel frame
+    <node name="quaternion_to_Euler" pkg="controller" type="quaternionToEuler.py" ns="current" />
+
+    # Launch node to convert /odometry/filtered_map from robot_localization to vessel parallel
+    <node name="current_map_to_parallel" pkg="controller" type="mapToParallel.py" ns="current" />
+      <remap from="/poseMap" to="/odometry/filtered_map" />
+    </node>
+
+    # Launch action server and client
+    <node name="request_coordinates_server" pkg="controller" type="actionServer.py" ns="actionServer" />
+    <node name="request_coordinates_client" pkg="controller" type="actionClient.py" ns="actionClient" />
+
+    # Launch node to convert desired coordinates from lat/lon to map frame (using navsat_transform from robot_localization)
+    <node name="desired_coords_navsat_transform" pkg="robot_localization" type="navsat_transform_node" ns="desired" />
+      <remap from="odometry/filtered" to="odometry/filtered_map"/>
+      <remap from="imu/data" to="wamv/sensors/imu/imu/data"/>
+      <remap from="gps/fix" to="actionServer/desiredCoordinatesLatLon"/>
+      <remap from="odometry/gps" to="poseMap" />
+    </node>
+
+    # Launch node to convert desired coordinates from map frame to vessel parallel
+    <node name="desired_map_to_parallel" pkg="controller" type="mapToParallel.py" ns="desired" />
+
+    # Node to publish goal x and yaw in vessel parallel
+    <node name="publish_goal_pose_parallel" pkg="controller" type="publishGoalPose.py" ns="desired" />
+
+    # Launch PID for X force
+    <node name="Xcontroller" pkg="pid" type="controller" ns="X" output="screen" >
+      <param name="Kp" value="4.3456" />
+      <param name="Ki" value="0.0675" />
+      <param name="Kd" value="107.2359" />
+      <param name="upper_limit" value="500" />
+      <param name="lower_limit" value="-200" />
+      <param name="windup_limit" value="100" />
+      <param name="max_loop_frequency" value="10" />
+      <param name="min_loop_frequency" value="1" />
+      <remap from="setpoint" to="/desired/x" />
+      <remap from="state" to="/current/x" />
+    </node>
+    #Launch PID for N torque
+    <node name="Ncontroller" pkg="pid" type="controller" ns="N" output="screen" >
+      <param name="Kp" value="10.7674" />
+      <param name="Ki" value="0.1673" />
+      <param name="Kd" value="538.5966" />
+      <param name="upper_limit" value="359.4" />
+      <param name="lower_limit" value="-359.4" />
+      <param name="windup_limit" value="100" />
+      <param name="max_loop_frequency" value="10" />
+      <param name="min_loop_frequency" value="1" />
+      <remap from="setpoint" to="/desired/psi" />
+      <remap from="state" to="/current/psi" />
+    </node>
+
+     # Node to publish thruster commands from PID force/torque commands
+     <node name="publish_thrust_cmds" pkg="controller" type="publishThrusterCommands.py"/>
+
+
+    <!-- <node name="servo_sim_node" pkg="pid" type="plant_sim" ns="right_wheel" output="screen" >
+      <param name="plant_order" value="2" />
+      <param name="reverse_acting" value="true" />
+    </node> -->
+
+    <!-- <node name="setpoint_node" pkg="pid" type="setpoint_node" output="screen" /> -->
+
+    <!-- rqt_plot is a resource hog, so if you're seeing high CPU usage, don't launch it  -->
+    <!-- <node name="rqt_plot" pkg="rqt_plot" type="rqt_plot"
+    args="/right_wheel/control_effort/data /right_wheel/state/data
+    /left_wheel/control_effort/data /left_wheel/state/data /setpoint/data" /> -->
+
+</launch>

@@ -1,0 +1,11 @@
+# Goal
+geometry_msgs/Point goalCoords
+---
+# Result
+geometry_msgs/Point finalCoords
+---
+# Feedback
+geometry_msgs/Point distanceToGoal
+geometry_msgs/Point currentCoords
+std_msgs/Float64 leftThrustCmd
+std_msgs/Float64 rightThrustCmd
